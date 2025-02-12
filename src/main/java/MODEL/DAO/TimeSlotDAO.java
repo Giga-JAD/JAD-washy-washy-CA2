@@ -63,6 +63,44 @@ public class TimeSlotDAO {
 		}
 	}
 
+	public static List<Integer> getSpecificTimeslotsByIds (String time_slot, Integer[] time_slot_ids)  throws SQLException {
+		// Set up variables and queries
+		List<Integer> time_slots = new ArrayList<>();
+		String placeholders = String.join(",", Collections.nCopies(time_slot_ids.length, "?"));
+		String query = """
+			    SELECT "%s"
+			    FROM timeslot 
+			    WHERE timeslot_id IN (%s)
+			    """.formatted(time_slot, placeholders);
+		
+		// Query to the database
+		try (Connection conn = DBConnection.getConnection();
+				PreparedStatement pstmt = conn.prepareStatement(query)) {
+			// Set the '?'s
+			for(int i = 0; i < time_slot_ids.length; i++) {
+				pstmt.setInt(i + 1, time_slot_ids[i]);
+			}
+			
+			try (ResultSet rs = pstmt.executeQuery()) {
+				// add the results into 'time_slots'
+				while (rs.next()) {
+					Integer value = rs.getObject(1, Integer.class);
+					time_slots.add(value);
+					
+					System.out.println("User that booked this time slot: " + value); // will return null for now
+				}
+				
+				return time_slots;
+			}
+		} 
+		catch (Exception e) {
+			System.out.println("------ Error in getSpecificTimeslotsByIds -------");
+			System.out.println("Database connection or query execution failed.");
+			e.printStackTrace();
+			throw e;
+		}		
+	}
+	
 	public static List<Integer> getTimeslotsByTimeslotId(int timeslot_id) throws SQLException {
 		System.out.println("We are in the function to get the timeslots ");
 
@@ -103,42 +141,46 @@ public class TimeSlotDAO {
 		}
 	}
 	
-	public static List<Integer> getSpecificTimeslotsByIds (String time_slot, Integer[] time_slot_ids)  throws SQLException {
-		// Set up variables and queries
-		List<Integer> time_slots = new ArrayList<>();
-		String placeholders = String.join(",", Collections.nCopies(time_slot_ids.length, "?"));
+	public static Integer createServiceTimeSlot(int service_id, String booked_date) throws SQLException {
+		System.out.println("We are in the model to get the small data");
+
+		// Set the variables
 		String query = """
-			    SELECT "%s" 
-			    FROM timeslot 
-			    WHERE timeslot_id IN (%s)
-			    """.formatted(time_slot, placeholders);
-		
-		// Query to the database
+				WITH inserted AS (
+				    INSERT INTO timeslot DEFAULT VALUES
+				    RETURNING timeslot_id
+				)
+				
+				INSERT INTO service_timeslot (service_id, timeslot_id, service_timeslot_date)
+				VALUES (?, (SELECT timeslot_id FROM inserted), ?)
+				RETURNING timeslot_id;
+				""";
+		Integer timeslot_id = null;
+
 		try (Connection conn = DBConnection.getConnection();
 				PreparedStatement pstmt = conn.prepareStatement(query)) {
-			// Set the '?'s
-			for(int i = 0; i < time_slot_ids.length; i++) {
-				pstmt.setInt(i + 1, time_slot_ids[i]);
-			}
-			
-			try (ResultSet rs = pstmt.executeQuery()) {
-				// add the results into 'time_slots'
-				while (rs.next()) {
-					Integer value = rs.getObject(1, Integer.class);
-					time_slots.add(value);
-					
-					System.out.println("User that booked this time slot: " + value); // will return null for now
-				}
-				
-				return time_slots;
-			}
-		} 
-		catch (Exception e) {
-			System.out.println("------ Error in getSpecificTimeslotsByIds -------");
+			pstmt.setInt(1, service_id);
+			 java.sql.Date sqlDate = java.sql.Date.valueOf(booked_date);
+            pstmt.setDate(2, sqlDate);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    timeslot_id = rs.getInt("timeslot_id");
+                    if (timeslot_id <= 0) {
+                        throw new SQLException("Invalid timeslot_id returned from database");
+                    }
+                } else {
+                    throw new SQLException("No timeslot_id returned from insert");
+                }
+            }
+		} catch (Exception e) {
+			System.out.println("------ Error in getTimeSlotSheets -------");
 			System.out.println("Database connection or query execution failed.");
 			e.printStackTrace();
 			throw e;
-		}		
+		}
+		
+		return timeslot_id;
 	}
 	
 	

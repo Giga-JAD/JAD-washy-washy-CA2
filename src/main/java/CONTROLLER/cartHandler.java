@@ -102,6 +102,7 @@ public class cartHandler extends HttpServlet {
 			session.removeAttribute("cart-item-list"); // Clear cart after booking
 			response.sendRedirect(request.getContextPath() + "/FeedbackController");
 		} catch (SQLException e) {
+			System.out.println("--- Controller - processCheckout ---");
 			e.printStackTrace();
 			request.setAttribute("error", "An error occurred while processing your booking. Please try again.");
 			request.getRequestDispatcher("/pages/cart.jsp").forward(request, response);

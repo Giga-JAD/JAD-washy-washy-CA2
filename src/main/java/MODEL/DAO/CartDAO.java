@@ -27,6 +27,7 @@ public class CartDAO {
 
 			connection.commit(); // Commit transaction
 		} catch (Exception e) {
+			System.out.println("--- DAO - processCartItems ---");
 			e.printStackTrace();
 			throw new SQLException("An error occurred while processing the booking.", e);
 		}
@@ -43,16 +44,24 @@ public class CartDAO {
 
 		try (PreparedStatement stmt = connection.prepareStatement(query)) {
 			stmt.setInt(1, userId);
-			stmt.setInt(2, item.getTimeslot().getTimeSlotId());
-			stmt.setInt(3, item.getService().getId());
-			stmt.setInt(4, 6); // Assuming status_id 1 is for booked.
-			stmt.setDate(5, java.sql.Date.valueOf(item.getBookedDate()));
+	        stmt.setInt(2, item.getTimeslot().getTimeSlotId());
+	        stmt.setInt(3, item.getService().getId());
+	        stmt.setInt(4, 6);
+	        
+	        // Safe date conversion
+	        try {
+	            java.sql.Date sqlDate = java.sql.Date.valueOf(item.getBookedDate());
+	            stmt.setDate(5, sqlDate);
+	        } catch (IllegalArgumentException e) {
+	            throw new SQLException("Invalid date format. Date must be in YYYY-MM-DD format: " + item.getBookedDate());
+	        }
 
 			try (ResultSet rs = stmt.executeQuery()) {
 				if (rs.next()) {
 					System.out.println("Successful checkout!");
 					return rs.getInt("booking_id");
 				} else {
+					System.out.println("--- This is the problem ---");
 					throw new SQLException("Failed to retrieve booking_id.");
 				}
 			}
