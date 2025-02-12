@@ -86,6 +86,11 @@
 	<servlet>
 		<servlet-name>ServiceController</servlet-name>
 		<servlet-class>CONTROLLER.ServiceController</servlet-class>
+		<multipart-config>
+            <max-file-size>10485760</max-file-size> <!-- 10MB -->
+            <max-request-size>20971520</max-request-size> <!-- 20MB -->
+            <file-size-threshold>5242880</file-size-threshold> <!-- 5MB -->
+        </multipart-config>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>ServiceController</servlet-name>
@@ -123,5 +128,13 @@
 	<servlet-mapping>
 		<servlet-name>AcknowledgeController</servlet-name>
 		<url-pattern>/AcknowledgeServlet</url-pattern>
+	</servlet-mapping>
+			<servlet>
+		<servlet-name>SetTrackedService</servlet-name>
+		<servlet-class>CONTROLLER.SetTrackedService</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>SetTrackedService</servlet-name>
+		<url-pattern>/SetTrackedService</url-pattern>
 	</servlet-mapping>
 </web-app>
